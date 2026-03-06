@@ -1,6 +1,6 @@
-# Enterprise RAG Insights Tool
+# Langchain 활용 RAG Insights Tool
 
-이 프로젝트는 PDF 문서를 분석하고 핵심 인사이트를 도출하는 RAG 기반의 AI 시스템입니다. Google Gemini API와 LangChain, FAISS를 활용하여 제작되었습니다. (아직 주요 에러 수정 중입니다.)
+이 프로젝트는 Langchain 라이브러리를 활용하여 PDF 문서를 분석하고 핵심 인사이트를 도출하는 RAG 기반의 AI 시스템입니다. Google Gemini API와 LangChain, FAISS를 활용하여 제작되었습니다. (아직 주요 에러 수정 중입니다.)
 
 ## 🚀 주요 기능
 
