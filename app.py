@@ -35,16 +35,16 @@ class DocumentProcessor:
         return text.strip()
 
     def process_pdf(self, file_path: str) -> List[Document]:
-        # Step A: 로드 (File Path -> List[Document])
+        # Step A: 로드 
         loader = PyPDFLoader(file_path)
         raw_docs = loader.load()
         
-        # Step B: 정제 (Document.page_content 정문화)
+        # Step B: 정제 
         for doc in raw_docs:
             doc.page_content = self.preprocess_text(doc.page_content)
             
-        # Step C: 지능형 청킹 (List[Document] -> List[Split Documents])
-        # 문맥 유지를 위해 overlap을 활용하며 의미 단위(세퍼레이터)로 분할
+        # Step C: 지능형 청킹 
+        # 문맥 유지를 위해 overlap을 활용하며 의미 단위로 분할
         chunks = self.splitter.split_documents(raw_docs)
         return chunks
 
@@ -72,7 +72,7 @@ class RAGEngine:
         import time
         import streamlit as st
 
-        batch_size = 80 # 무료 티어 분당 100건 제한 대응
+        batch_size = 80 # 무료 티어 에러 해결을 위해 분당 100건 제한 대응
         
         # 첫 번째 배치로 벡터 DB 초기화
         first_batch = chunks[:batch_size]
@@ -106,11 +106,12 @@ class RAGEngine:
         if not self.vector_db:
             raise ValueError("벡터 데이터베이스가 초기화되지 않았습니다.")
 
-        # 오직 제공된 Context만 사용하도록 제한하는 프롬프트
+        # 제공된 Context만 사용하도록 제한하는 프롬프트
         template = """당신은 인공지능 분석가입니다. 
         아래 제공된 [Context]를 바탕으로만 질문에 답하세요. 
         답을 모른다면 솔직하게 모른다고 하세요. 
-        답변은 친절하고 논리적인 한국어로 작성하세요.
+        답변은 친절하고 논리적으로 한국어로 작성하세요.
+        한국어로 답변 시 인코딩은 UTF-8로 해주세요.
 
         [Context]
         {context}
@@ -173,7 +174,7 @@ def main():
         if st.button("핵심 인사이트 도출"):
             qa_chain = engine.get_qa_chain()
             with st.spinner("AI 분석 중..."):
-                response = qa_chain.invoke("이 문서의 핵심 요약과 우리가 반드시 알아야 할 비즈니스 인사이트 3가지를 도출해줘.")
+                response = qa_chain.invoke("이 문서의 핵심 요약을 수행하고, 우리가 반드시 알아야 할 비즈니스 인사이트 3가지를 도출해줘.")
                 st.subheader("💡 도출된 인사이트")
                 st.markdown(response["result"])
                 
