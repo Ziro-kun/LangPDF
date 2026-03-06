@@ -30,6 +30,7 @@ streamlit run app.py
 
 ## 📁 주요 코드 구조 설명
 
-- **`DocumentProcessor`**: 원본 리소스에서 텍스트를 가져오고 자연어 처리 시스템이 이해하기 쉽도록 전처리(`preprocess_text`) 및 분할(`split_documents`)하는 파이프라인입니다.
-- **`RAGEngine`**: FAISS를 사용해 Document List를 인덱싱합니다. Rate Limit을 회피하기 위해 `merge_from`으로 배치를 쪼개어 API 요청을 전송합니다.
-- **Streamlit UI**: 유저 친화적인 업로드/상황 모니터링 UI 및 Interactive Chat 창을 제공합니다.
+- **`engine.py`**:
+  - **`DocumentProcessor`**: 원본 리소스에서 텍스트를 가져오고 자연어 처리 시스템이 이해하기 쉽도록 전처리(`preprocess_text`) 및 분할(`split_documents`)하는 파이프라인입니다.
+  - **`RAGEngine`**: FAISS를 사용해 Document List를 인덱싱합니다. Rate Limit을 회피하기 위해 `merge_from`으로 배치를 쪼개어 API 요청을 전송합니다.
+- **`app.py`**: Streamlit을 활용하여 업로드/상황 모니터링 UI 및 Interactive Chat 창을 제공하며, `engine.py`의 모듈을 호출하여 동작합니다.
