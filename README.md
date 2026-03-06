@@ -1,6 +1,6 @@
 # Enterprise RAG Insights Tool
 
-이 프로젝트는 PDF 문서를 분석하고 핵심 인사이트를 도출하는 RAG(Retrieval-Augmented Generation) 기반의 AI 시스템입니다. Google Gemini API와 LangChain, FAISS를 활용하여 제작되었습니다.
+이 프로젝트는 PDF 문서를 분석하고 핵심 인사이트를 도출하는 RAG 기반의 AI 시스템입니다. Google Gemini API와 LangChain, FAISS를 활용하여 제작되었습니다. (아직 주요 에러 수정 중입니다.)
 
 ## 🚀 주요 기능
 
@@ -30,6 +30,6 @@ streamlit run app.py
 
 ## 📁 주요 코드 구조 설명
 
-- **`DocumentProcessor`**: 원본 리소스에서 텍스트를 가져오고 자연어 처리 시스템이 이해하기 쉽도록 전처리(`preprocess_text`) 및 분할(`split_documents`)하는 파이프라인.
-- **`RAGEngine`**: FAISS를 사용해 Document List를 인덱싱합니다. Rate Limit을 회피하기 위해 `merge_from`으로 배치를 쪼개어 API 요청을 전송.
+- **`DocumentProcessor`**: 원본 리소스에서 텍스트를 가져오고 자연어 처리 시스템이 이해하기 쉽도록 전처리(`preprocess_text`) 및 분할(`split_documents`)하는 파이프라인입니다.
+- **`RAGEngine`**: FAISS를 사용해 Document List를 인덱싱합니다. Rate Limit을 회피하기 위해 `merge_from`으로 배치를 쪼개어 API 요청을 전송합니다.
 - **Streamlit UI**: 유저 친화적인 업로드/상황 모니터링 UI 및 Interactive Chat 창을 제공합니다.
