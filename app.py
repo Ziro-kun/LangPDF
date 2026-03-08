@@ -1,10 +1,10 @@
 import os
 import uuid
 import tempfile
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from engine import DocumentProcessor, RAGEngine
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static", static_url_path="")
 
 # 세션별 RAGEngine 인스턴스를 메모리에 저장 (서버리스 환경 주의)
 _sessions: dict[str, RAGEngine] = {}
@@ -13,7 +13,8 @@ _sessions: dict[str, RAGEngine] = {}
 # ── 헬스 체크 ────────────────────────────────────────────────────────────────
 @app.route("/")
 def index():
-    return jsonify({"status": "ok", "service": "LangPDF RAG API"})
+    return send_from_directory(app.static_folder, "index.html")
+
 
 
 # ── 1. PDF 업로드 & 인덱싱 ───────────────────────────────────────────────────
