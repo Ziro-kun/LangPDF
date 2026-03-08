@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LangPDF — RAG Insights Tool</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0d0f14;
+        --surface: #161b26;
+        --surface2: #1e2636;
+        --border: #2a3347;
+        --accent: #6366f1;
+        --accent2: #818cf8;
+        --accent-glow: rgba(99, 102, 241, 0.25);
+        --text: #e2e8f0;
+        --muted: #64748b;
+        --success: #34d399;
+        --error: #f87171;
+        --warning: #fbbf24;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      /* ── Header ── */
+      header {
+        width: 100%;
+        padding: 20px 40px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(22, 27, 38, 0.8);
+        backdrop-filter: blur(10px);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .logo {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
+      .logo span {
+        color: var(--accent2);
+      }
+      .badge {
+        font-size: 11px;
+        font-weight: 600;
+        background: var(--accent-glow);
+        color: var(--accent2);
+        border: 1px solid var(--accent);
+        padding: 2px 8px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      /* ── Main Layout ── */
+      main {
+        width: 100%;
+        max-width: 860px;
+        padding: 48px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+      }
+
+      .hero {
+        text-align: center;
+      }
+      .hero h1 {
+        font-size: 36px;
+        font-weight: 700;
+        letter-spacing: -1px;
+        line-height: 1.2;
+      }
+      .hero h1 span {
+        background: linear-gradient(120deg, var(--accent2), #a78bfa, #60a5fa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .hero p {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.6;
+      }
+
+      /* ── Card ── */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 28px;
+      }
+      .card-title {
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--muted);
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .card-title::before {
+        content: "";
+        display: block;
+        width: 3px;
+        height: 14px;
+        background: var(--accent);
+        border-radius: 2px;
+      }
+
+      /* ── Form Elements ── */
+      label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--muted);
+        display: block;
+        margin-bottom: 6px;
+      }
+      input[type="password"],
+      input[type="text"],
+      textarea {
+        width: 100%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--text);
+        font-size: 14px;
+        font-family: inherit;
+        padding: 12px 14px;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+      }
+      input[type="password"]:focus,
+      input[type="text"]:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-glow);
+      }
+      textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+
+      /* ── File Drop Zone ── */
+      .drop-zone {
+        border: 2px dashed var(--border);
+        border-radius: 12px;
+        padding: 36px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition:
+          border-color 0.2s,
+          background 0.2s;
+        position: relative;
+      }
+      .drop-zone:hover,
+      .drop-zone.drag-over {
+        border-color: var(--accent);
+        background: var(--accent-glow);
+      }
+      .drop-zone input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+      }
+      .drop-icon {
+        font-size: 36px;
+        margin-bottom: 10px;
+      }
+      .drop-zone p {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .drop-zone .file-name {
+        color: var(--accent2);
+        font-weight: 600;
+        margin-top: 6px;
+        font-size: 14px;
+      }
+
+      /* ── Button ── */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+        font-family: inherit;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), #7c3aed);
+        color: #fff;
+        width: 100%;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+      }
+      .btn-primary:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+      }
+      .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .btn-secondary {
+        background: var(--surface2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        width: 100%;
+      }
+      .btn-secondary:hover:not(:disabled) {
+        border-color: var(--accent);
+        color: var(--accent2);
+      }
+      .btn-secondary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* ── Status Badge ── */
+      .status-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 500;
+        border: 1px solid;
+      }
+      .status-bar.info {
+        background: rgba(99, 102, 241, 0.1);
+        border-color: rgba(99, 102, 241, 0.3);
+        color: var(--accent2);
+      }
+      .status-bar.ok {
+        background: rgba(52, 211, 153, 0.1);
+        border-color: rgba(52, 211, 153, 0.3);
+        color: var(--success);
+      }
+      .status-bar.error {
+        background: rgba(248, 113, 113, 0.1);
+        border-color: rgba(248, 113, 113, 0.3);
+        color: var(--error);
+      }
+      .status-bar.warn {
+        background: rgba(251, 191, 36, 0.1);
+        border-color: rgba(251, 191, 36, 0.3);
+        color: var(--warning);
+      }
+      .spinner {
+        width: 14px;
+        height: 14px;
+        border: 2px solid currentColor;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        flex-shrink: 0;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ── Result ── */
+      .result-box {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        font-size: 14px;
+        line-height: 1.8;
+        white-space: pre-wrap;
+        word-break: break-word;
+        display: none;
+      }
+      .result-box.visible {
+        display: block;
+        animation: fadeIn 0.3s ease;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .sources {
+        margin-top: 16px;
+      }
+      .sources summary {
+        font-size: 12px;
+        color: var(--muted);
+        cursor: pointer;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+        user-select: none;
+      }
+      .source-item {
+        margin-top: 10px;
+        padding: 12px;
+        background: var(--bg);
+        border-radius: 8px;
+        font-size: 12px;
+        color: var(--muted);
+        border: 1px solid var(--border);
+        line-height: 1.6;
+      }
+      .source-item strong {
+        color: var(--accent2);
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      /* ── Q&A history ── */
+      .qa-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .qa-bubble {
+        padding: 14px 16px;
+        border-radius: 12px;
+        font-size: 14px;
+        line-height: 1.7;
+        animation: fadeIn 0.3s ease;
+      }
+      .qa-bubble.user {
+        background: var(--accent-glow);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        align-self: flex-end;
+        max-width: 80%;
+      }
+      .qa-bubble.ai {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        align-self: flex-start;
+        max-width: 95%;
+      }
+      .qa-bubble .role {
+        font-size: 11px;
+        font-weight: 600;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        opacity: 0.6;
+      }
+
+      .input-row {
+        display: flex;
+        gap: 10px;
+      }
+      .input-row input {
+        flex: 1;
+      }
+      .input-row .btn {
+        width: auto;
+        padding: 12px 20px;
+      }
+
+      .divider {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 4px 0;
+      }
+
+      /* Hidden */
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">Lang<span>PDF</span></div>
+      <div class="badge">RAG · Gemini</div>
+    </header>
+
+    <main>
+      <div class="hero">
+        <h1>PDF를 <span>AI 인사이트</span>로</h1>
+        <p>
+          PDF를 업로드하면 Google Gemini + LangChain + FAISS 기반으로<br />핵심
+          인사이트를 도출하고 자유롭게 질의응답할 수 있습니다.
+        </p>
+      </div>
+
+      <!-- ① API Key + PDF 업로드 -->
+      <div class="card" id="upload-card">
+        <div class="card-title">1단계 — API 키 &amp; PDF 업로드</div>
+
+        <label for="api-key">Gemini API Key</label>
+        <input
+          type="password"
+          id="api-key"
+          placeholder="AIza..."
+          style="margin-bottom: 18px"
+        />
+
+        <label>PDF 파일 선택</label>
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" id="file-input" accept=".pdf" />
+          <div class="drop-icon">📄</div>
+          <p>파일을 드래그하거나 클릭해서 선택하세요</p>
+          <div class="file-name hidden" id="file-name"></div>
+        </div>
+
+        <div style="margin-top: 18px">
+          <div id="upload-status" class="status-bar info hidden"></div>
+        </div>
+        <button
+          class="btn btn-primary"
+          id="upload-btn"
+          style="margin-top: 14px"
+          onclick="uploadPDF()"
+        >
+          🚀 업로드 &amp; 인덱싱 시작
+        </button>
+      </div>
+
+      <!-- ② 인사이트 도출 -->
+      <div class="card hidden" id="insight-card">
+        <div class="card-title">2단계 — 핵심 인사이트 도출</div>
+        <button
+          class="btn btn-primary"
+          id="insight-btn"
+          onclick="getInsights()"
+        >
+          💡 인사이트 3가지 도출
+        </button>
+        <div
+          id="insight-status"
+          class="status-bar info hidden"
+          style="margin-top: 14px"
+        ></div>
+        <div class="result-box" id="insight-result"></div>
+        <details class="sources hidden" id="insight-sources">
+          <summary>참조 문맥 보기</summary>
+          <div id="insight-src-list"></div>
+        </details>
+      </div>
+
+      <!-- ③ Q&A -->
+      <div class="card hidden" id="qa-card">
+        <div class="card-title">3단계 — 자유 질의응답</div>
+        <div class="qa-list" id="qa-list"></div>
+        <hr class="divider" style="margin-top: 14px" />
+        <div class="input-row" style="margin-top: 14px">
+          <input
+            type="text"
+            id="q-input"
+            placeholder="문서에 대해 질문하세요..."
+            onkeydown="if (event.key === 'Enter') ask();"
+          />
+          <button class="btn btn-secondary" id="ask-btn" onclick="ask()">
+            전송 ↑
+          </button>
+        </div>
+        <div
+          id="qa-status"
+          class="status-bar info hidden"
+          style="margin-top: 12px"
+        ></div>
+      </div>
+    </main>
+
+    <script>
+      let sessionId = null;
+
+      // ── Drop Zone ──────────────────────────────────────────────
+      const dz = document.getElementById("drop-zone");
+      const fi = document.getElementById("file-input");
+      const fn = document.getElementById("file-name");
+
+      fi.addEventListener("change", () => {
+        if (fi.files[0]) {
+          fn.textContent = fi.files[0].name;
+          fn.classList.remove("hidden");
+        }
+      });
+      dz.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dz.classList.add("drag-over");
+      });
+      dz.addEventListener("dragleave", () => dz.classList.remove("drag-over"));
+      dz.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dz.classList.remove("drag-over");
+        if (e.dataTransfer.files[0]) {
+          fi.files = e.dataTransfer.files;
+          fn.textContent = e.dataTransfer.files[0].name;
+          fn.classList.remove("hidden");
+        }
+      });
+
+      // ── Helpers ────────────────────────────────────────────────
+      function setStatus(id, type, html, loading = false) {
+        const el = document.getElementById(id);
+        el.className = `status-bar ${type}`;
+        el.classList.remove("hidden");
+        el.innerHTML = loading ? `<div class="spinner"></div> ${html}` : html;
+      }
+      function hideStatus(id) {
+        document.getElementById(id).classList.add("hidden");
+      }
+
+      // ── 1. Upload ──────────────────────────────────────────────
+      async function uploadPDF() {
+        const apiKey = document.getElementById("api-key").value.trim();
+        const file = fi.files[0];
+        if (!apiKey)
+          return setStatus(
+            "upload-status",
+            "error",
+            "⚠️ API Key를 입력해주세요.",
+          );
+        if (!file)
+          return setStatus(
+            "upload-status",
+            "error",
+            "⚠️ PDF 파일을 선택해주세요.",
+          );
+
+        document.getElementById("upload-btn").disabled = true;
+        setStatus(
+          "upload-status",
+          "info",
+          "인덱싱 중입니다. 문서 크기에 따라 수 분이 걸릴 수 있어요...",
+          true,
+        );
+
+        const fd = new FormData();
+        fd.append("api_key", apiKey);
+        fd.append("file", file);
+
+        try {
+          const res = await fetch("/api/upload", { method: "POST", body: fd });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "업로드 실패");
+
+          sessionId = data.session_id;
+          setStatus(
+            "upload-status",
+            "ok",
+            `✅ ${data.chunks}개 청크 인덱싱 완료! 아래에서 인사이트를 도출하거나 질문하세요.`,
+          );
+          document.getElementById("insight-card").classList.remove("hidden");
+          document.getElementById("qa-card").classList.remove("hidden");
+        } catch (e) {
+          setStatus("upload-status", "error", `❌ ${e.message}`);
+          document.getElementById("upload-btn").disabled = false;
+        }
+      }
+
+      // ── 2. Insights ────────────────────────────────────────────
+      async function getInsights() {
+        if (!sessionId) return;
+        document.getElementById("insight-btn").disabled = true;
+        setStatus(
+          "insight-status",
+          "info",
+          "AI가 인사이트를 분석 중입니다...",
+          true,
+        );
+        document.getElementById("insight-result").classList.remove("visible");
+        document.getElementById("insight-sources").classList.add("hidden");
+
+        try {
+          const res = await fetch("/api/insights", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id: sessionId }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "분석 실패");
+
+          hideStatus("insight-status");
+          const box = document.getElementById("insight-result");
+          box.textContent = data.result;
+          box.classList.add("visible");
+
+          if (data.sources?.length) {
+            const list = document.getElementById("insight-src-list");
+            list.innerHTML = data.sources
+              .map(
+                (s, i) =>
+                  `<div class="source-item"><strong>Source ${i + 1} — Page ${s.page}</strong>${s.content}...</div>`,
+              )
+              .join("");
+            document
+              .getElementById("insight-sources")
+              .classList.remove("hidden");
+          }
+        } catch (e) {
+          setStatus("insight-status", "error", `❌ ${e.message}`);
+        }
+        document.getElementById("insight-btn").disabled = false;
+      }
+
+      // ── 3. Q&A ────────────────────────────────────────────────
+      async function ask() {
+        const q = document.getElementById("q-input").value.trim();
+        if (!q || !sessionId) return;
+
+        const list = document.getElementById("qa-list");
+        document.getElementById("q-input").value = "";
+        document.getElementById("ask-btn").disabled = true;
+
+        list.insertAdjacentHTML(
+          "beforeend",
+          `<div class="qa-bubble user"><div class="role">나</div>${q}</div>`,
+        );
+        setStatus("qa-status", "info", "AI가 답변을 생성 중입니다...", true);
+
+        try {
+          const res = await fetch("/api/query", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id: sessionId, question: q }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "질의 실패");
+
+          hideStatus("qa-status");
+          list.insertAdjacentHTML(
+            "beforeend",
+            `<div class="qa-bubble ai"><div class="role">AI</div>${data.result}</div>`,
+          );
+          list.scrollTop = list.scrollHeight;
+        } catch (e) {
+          setStatus("qa-status", "error", `❌ ${e.message}`);
+        }
+        document.getElementById("ask-btn").disabled = false;
+        document.getElementById("q-input").focus();
+      }
+    </script>
+  </body>
+</html>
