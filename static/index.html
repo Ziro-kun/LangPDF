@@ -509,6 +509,7 @@
 
     <script>
       let sessionId = null;
+      let globalApiKey = null;
 
       // ── Drop Zone ──────────────────────────────────────────────
       const dz = document.getElementById("drop-zone");
@@ -582,6 +583,7 @@
           if (!res.ok) throw new Error(data.error || "업로드 실패");
 
           sessionId = data.session_id;
+          globalApiKey = apiKey;
           setStatus(
             "upload-status",
             "ok",
@@ -614,7 +616,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               session_id: sessionId,
-              api_key: document.getElementById("api-key").value.trim(),
+              api_key: globalApiKey,
             }),
           });
           const data = await res.json();
@@ -664,7 +666,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               session_id: sessionId,
-              api_key: document.getElementById("api-key").value.trim(),
+              api_key: globalApiKey,
               question: q,
             }),
           });
