@@ -1,70 +1,110 @@
 import os
+import uuid
 import tempfile
-import streamlit as st
-
+from flask import Flask, request, jsonify, send_from_directory
 from engine import DocumentProcessor, RAGEngine
 
-def main():
-    st.set_page_config(page_title="Enterprise RAG Solution", layout="wide")
-    st.title("🚀 Enterprise RAG Insights Tool")
+app = Flask(__name__, static_folder="static")
 
-    # API Key 설정
-    with st.sidebar:
-        api_key = st.text_input("Gemini API Key", type="password")
-        st.info("이 도구는 PDF 정제, 지능형 청킹, FAISS 인덱싱을 거쳐 답변을 생성합니다.")
+# 세션별 RAGEngine 인스턴스를 메모리에 저장 (서버리스 환경 주의)
+_sessions: dict[str, RAGEngine] = {}
 
+
+# ── 정적 파일 서빙 (index.html) ─────────────────────────────────────────────
+@app.route("/")
+def index():
+    return send_from_directory(app.static_folder, "index.html")
+
+
+# ── 1. PDF 업로드 & 인덱싱 ───────────────────────────────────────────────────
+@app.route("/api/upload", methods=["POST"])
+def upload():
+    """
+    Form-data:
+      - file   : PDF 파일
+      - api_key: Gemini API Key
+    Response:
+      { "session_id": "..." }
+    """
+    api_key = request.form.get("api_key", "").strip()
     if not api_key:
-        st.warning("API Key를 입력해주세요.")
-        st.stop()
+        return jsonify({"error": "api_key가 필요합니다."}), 400
 
-    # 객체 초기화
-    if api_key:
+    uploaded = request.files.get("file")
+    if not uploaded or not uploaded.filename.endswith(".pdf"):
+        return jsonify({"error": "PDF 파일을 업로드해주세요."}), 400
+
+    # 임시 파일로 저장 → 처리
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        uploaded.save(tmp.name)
+        tmp_path = tmp.name
+
+    try:
         processor = DocumentProcessor(chunk_size=1000, chunk_overlap=150)
+        chunks = processor.process_pdf(tmp_path)
+
         engine = RAGEngine(api_key=api_key)
-    else:
-        processor = None
-        engine = None
+        engine.build_index(chunks)
 
-    uploaded_file = st.file_uploader("분석할 PDF 파일을 업로드하세요", type="pdf")
+        session_id = str(uuid.uuid4())
+        _sessions[session_id] = engine
 
-    if uploaded_file:
-        # 파일 처리 프로세스
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-            tmp.write(uploaded_file.getvalue())
-            tmp_path = tmp.name
-
-        with st.status("데이터 처리 중...", expanded=True) as status:
-            st.write("1. 텍스트 추출 및 정제 중...")
-            chunks = processor.process_pdf(tmp_path)
-            
-            st.write(f"2. {len(chunks)}개의 청크 생성 완료. 벡터화 진행 중...")
-            engine.build_index(chunks)
-            
-            status.update(label="인덱싱 완료!", state="complete", expanded=False)
-        
-        # 인사이트 도출 버튼
-        if st.button("핵심 인사이트 도출"):
-            qa_chain = engine.get_qa_chain()
-            with st.spinner("AI 분석 중..."):
-                response = qa_chain.invoke("이 문서의 핵심 요약을 수행하고, 우리가 반드시 알아야 할 비즈니스 인사이트 3가지를 도출해줘.")
-                st.subheader("💡 도출된 인사이트")
-                st.markdown(response["result"])
-                
-                with st.expander("사용한 참조 문맥 확인"):
-                    for i, doc in enumerate(response["source_documents"]):
-                        st.caption(f"Source {i+1}: Page {doc.metadata.get('page', 'N/A')}")
-                        st.write(doc.page_content[:300] + "...")
-
-        # 질의응답 Input
-        st.divider()
-        query = st.text_input("문서에 대해 구체적인 질문을 입력하세요:")
-        if query:
-            qa_chain = engine.get_qa_chain(k=5)
-            with st.spinner("답변 생성 중..."):
-                res = qa_chain.invoke(query)
-                st.markdown(f"**A:** {res['result']}")
-
+        return jsonify({
+            "session_id": session_id,
+            "chunks": len(chunks),
+            "message": f"{len(chunks)}개의 청크가 인덱싱되었습니다."
+        })
+    finally:
         os.remove(tmp_path)
 
+
+# ── 2. 인사이트 도출 ─────────────────────────────────────────────────────────
+@app.route("/api/insights", methods=["POST"])
+def insights():
+    """
+    JSON body: { "session_id": "..." }
+    """
+    data = request.get_json(force=True)
+    session_id = data.get("session_id", "")
+    engine = _sessions.get(session_id)
+    if not engine:
+        return jsonify({"error": "유효하지 않은 session_id입니다. 먼저 PDF를 업로드하세요."}), 404
+
+    qa_chain = engine.get_qa_chain()
+    response = qa_chain.invoke(
+        "이 문서의 핵심 요약을 수행하고, 우리가 반드시 알아야 할 비즈니스 인사이트 3가지를 도출해줘."
+    )
+    sources = [
+        {"page": doc.metadata.get("page", "N/A"), "content": doc.page_content[:300]}
+        for doc in response["source_documents"]
+    ]
+    return jsonify({"result": response["result"], "sources": sources})
+
+
+# ── 3. 질의응답 ───────────────────────────────────────────────────────────────
+@app.route("/api/query", methods=["POST"])
+def query():
+    """
+    JSON body: { "session_id": "...", "question": "..." }
+    """
+    data = request.get_json(force=True)
+    session_id = data.get("session_id", "")
+    question = data.get("question", "").strip()
+
+    engine = _sessions.get(session_id)
+    if not engine:
+        return jsonify({"error": "유효하지 않은 session_id입니다. 먼저 PDF를 업로드하세요."}), 404
+    if not question:
+        return jsonify({"error": "질문을 입력해주세요."}), 400
+
+    qa_chain = engine.get_qa_chain(k=5)
+    res = qa_chain.invoke(question)
+    sources = [
+        {"page": doc.metadata.get("page", "N/A"), "content": doc.page_content[:300]}
+        for doc in res["source_documents"]
+    ]
+    return jsonify({"result": res["result"], "sources": sources})
+
+
 if __name__ == "__main__":
-    main()
+    app.run(debug=True)

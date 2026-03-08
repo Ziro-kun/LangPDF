@@ -69,7 +69,6 @@ class RAGEngine:
     def build_index(self, chunks: List[Document], save_path: str = "faiss_index"):
         """벡터 스토어 생성 및 로컬 저장 (API Rate Limit 대응)"""
         import time
-        import streamlit as st
 
         batch_size = 80 # 무료 티어 에러 해결을 위해 분당 100건 제한 대응
         
@@ -80,7 +79,7 @@ class RAGEngine:
         # 나머지 배치를 순차적으로 추가
         for i in range(batch_size, len(chunks), batch_size):
             batch = chunks[i:i + batch_size]
-            st.toast(f"API Rate Limit 방지를 위해 60초 대기 중... ({i}/{len(chunks)} 처리 완료)")
+            print(f"API Rate Limit 방지를 위해 60초 대기 중... ({i}/{len(chunks)} 처리 완료)")
             time.sleep(60) # 60초 대기
             
             temp_db = FAISS.from_documents(batch, self.embeddings)
