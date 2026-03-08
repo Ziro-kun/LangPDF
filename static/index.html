@@ -612,7 +612,10 @@
           const res = await fetch("/api/insights", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ session_id: sessionId }),
+            body: JSON.stringify({
+              session_id: sessionId,
+              api_key: document.getElementById("api-key").value.trim(),
+            }),
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "분석 실패");
@@ -659,7 +662,11 @@
           const res = await fetch("/api/query", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ session_id: sessionId, question: q }),
+            body: JSON.stringify({
+              session_id: sessionId,
+              api_key: document.getElementById("api-key").value.trim(),
+              question: q,
+            }),
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "질의 실패");
