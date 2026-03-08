@@ -8,7 +8,8 @@ Google Gemini API, LangChain, FAISS를 활용해 PDF 문서를 분석하고 핵�
 - **PDF 추출 및 정제**: 업로드된 PDF에서 텍스트를 추출하고 불필요한 특수문자·공백을 정제합니다.
 - **지능형 문서 청킹**: 문맥 손실을 최소화하기 위해 Semantic 단위와 일정 길이의 Overlap을 두고 문서를 청크로 분할합니다.
 - **벡터 인덱싱 (FAISS)**: `models/gemini-embedding-001` 모델로 문서를 벡터화·인덱싱합니다. 무료 티어 Rate Limit 대응을 위해 60초 대기 로직이 적용되어 있습니다.
-- **Insight 및 Q&A 생성**: 핵심 비즈니스 인사이트 3가지 자동 추출 및 자유 질의응답 REST API를 제공합니다.
+- **웹 UI**: 다크 테마 싱글페이지 UI로 Gemini API Key 입력 → PDF 업로드 → 인사이트 도출 → 질의응답 흐름을 브라우저에서 사용할 수 있습니다.
+- **Insight 및 Q&A REST API**: 핵심 비즈니스 인사이트 3가지 자동 추출 및 자유 질의응답 엔드포인트를 제공합니다.
 
 ## 📡 API 엔드포인트
 
@@ -70,4 +71,5 @@ vercel deploy
   - `DocumentProcessor`: PDF 로드 → 텍스트 정제 → 청킹 파이프라인
   - `RAGEngine`: FAISS 인덱싱, Rate Limit 대응 배치 처리, QA 체인 구성
 - **`app.py`**: Flask REST API 서버. 업로드·인사이트·질의응답 엔드포인트 제공
+- **`static/index.html`**: 다크 테마 싱글페이지 웹 UI (API Key 입력 → PDF 업로드 → 인사이트 → Q&A)
 - **`vercel.json`**: `@vercel/python` 런타임으로 Flask 배포 설정
