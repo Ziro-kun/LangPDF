@@ -66,7 +66,7 @@ class RAGEngine:
         )
         self.vector_db = None
 
-    def build_index(self, chunks: List[Document], save_path: str = "faiss_index"):
+    def build_index(self, chunks: List[Document], save_path: str = "/tmp/faiss_index"):
         """벡터 스토어 생성 및 로컬 저장 (API Rate Limit 대응)"""
         import time
 
@@ -88,7 +88,7 @@ class RAGEngine:
         self.vector_db.save_local(save_path)
         return self.vector_db
 
-    def load_index(self, save_path: str = "faiss_index"):
+    def load_index(self, save_path: str = "/tmp/faiss_index"):
         """저장된 벡터 스토어 로드"""
         if os.path.exists(save_path):
             self.vector_db = FAISS.load_local(
